@@ -57,7 +57,7 @@ export async function POST({ request }: APIEvent) {
       key?: string
       temperature: number
       password?: string
-      model: Model
+      model?: Model
     } = await request.json()
     const { messages, key = localKey, temperature, password, model } = body
 
@@ -103,7 +103,7 @@ export async function POST({ request }: APIEvent) {
         timeout,
         method: "POST",
         body: JSON.stringify({
-          model: model,
+          model: model || "gpt-3.5-turbo",
           messages: messages.map(k => ({ role: k.role, content: k.content })),
           temperature,
           stream: true
@@ -133,19 +133,25 @@ export async function POST({ request }: APIEvent) {
           if (event.type === "event") {
             const data = event.data
             if (data === "[DONE]") {
+              controller.enqueue(encoder.encode("data:$\n\n"))
               controller.close()
               return
             }
             try {
               const json = JSON.parse(data)
-              const text = json.choices[0].delta?.content
-              const queue = encoder.encode(text)
-              controller.enqueue(queue)
+              const text = `data:${json.choices[0].delta?.content}\n\n`
+              if (text !== "data:undefined\n\n") {
+                const queue = encoder.encode(text)
+                controller.enqueue(queue)
+              }
             } catch (e) {
               controller.error(e)
             }
           }
         }
+        const eventText = "event: gpt\n"
+        const eventQueue = encoder.encode(eventText)
+        controller.enqueue(eventQueue)
         const parser = createParser(streamParser)
         for await (const chunk of rawRes.body as any) {
           parser.feed(decoder.decode(chunk))
@@ -153,7 +159,14 @@ export async function POST({ request }: APIEvent) {
       }
     })
 
-    return new Response(stream)
+    const response = new Response(stream, {
+      headers: {
+        "Content-Type": "text/event-stream",
+        "Cache-Control": "no-cache",
+        Connection: "keep-alive"
+      }
+    })
+    return response
   } catch (err: any) {
     return new Response(
       JSON.stringify({
