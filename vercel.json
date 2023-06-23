@@ -5,11 +5,15 @@
       "destination": "/raw/cron"
     },
     {
-      "source": "/:path((?!api).*)",
-      "destination": "/"
+      "source": "/raw",
+      "destination": "/raw"
     },
     {
-      "source": "/:path((?!raw).*)",
+      "source": "/api",
+      "destination": "/api"
+    },
+    {
+      "source": "/:path((?!api).*)",
       "destination": "/"
     }
   ],
