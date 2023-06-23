@@ -1,21 +1,25 @@
 {
   "rewrites": [
     {
-      "source": "/api/cron",
-      "destination": "/api/cron"
+      "source": "/raw/cron",
+      "destination": "/raw/cron"
     },
     {
       "source": "/:path((?!api).*)",
+      "destination": "/"
+    },
+    {
+      "source": "/:path((?!raw).*)",
       "destination": "/"
     }
   ],
   "crons": [
     {
-      "path": "/api/cron",
+      "path": "/raw/cron",
       "schedule": "0 0 * * *"
     },
     {
-      "path": "/api/cron",
+      "path": "/raw/cron",
       "schedule": "0 12 * * *"
     }
   ],
